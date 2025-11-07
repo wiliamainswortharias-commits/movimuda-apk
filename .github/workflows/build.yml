@@ -1,48 +1,38 @@
-name: Construir APK de PWA
+name: build
+
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout del repositorio
+      - name: Descargar repositorio
         uses: actions/checkout@v3
-        # Obtiene el código fuente del repositorio
-
-      - name: Configurar JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin' 
-          java-version: 17
-        # Instala JDK 17 (Android Gradle requiere JDK17:contentReference[oaicite:0]{index=0})
 
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-        # Instala Node.js (agrega la versión solicitada al PATH):contentReference[oaicite:1]{index=1}
 
-      - name: Instalar Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-        # Instala la CLI de Bubblewrap de forma global
-
-      - name: Inicializar proyecto TWA
+      - name: Instalar dependencias necesarias
         run: |
-          printf "n\nn\n\n\n\ncom.movimuda.webapp\n\n\n\n\nN\nN\n\n\npassword123\npassword123\n" | bubblewrap init --manifest=https://movimuda.web.app/manifest.json
-        # Crea el proyecto Android desde el manifest de la PWA, respondiendo 'no' a la instalación de JDK/SDK y aceptando valores por defecto
-        # Nota: ubuntu-latest ya incluye el SDK de Android (ANDROID_HOME):contentReference[oaicite:2]{index=2}, por lo que no es necesario instalarlo
+          npm install -g @bubblewrap/cli
+
+      - name: Inicializar proyecto TWA automáticamente
+        run: |
+          echo "Creando proyecto TWA sin interacción..."
+          yes "" | bubblewrap init --manifest=https://tusitio.com/manifest.json
 
       - name: Construir APK (release)
-        run: bubblewrap build --mode=release
-        # Compila la aplicación en modo release, generando app-release-signed.apk
+        run: |
+          bubblewrap build
 
       - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: app-release-signed.apk
-          path: app-release-signed.apk
-        # Sube el APK firmado generado como artefacto de la ejecución:contentReference[oaicite:3]{index=3} 
+          name: app-release
+          path: ./app-release-signed.apk
