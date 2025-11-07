@@ -32,17 +32,29 @@ jobs:
         env:
           BROWSER: none
 
-      - name: Construir APK (release)
+      - name: Restaurar keystore desde secreto
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > my-release-key.jks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Firmar el APK
         run: |
           cd twa
-          if [ -f ./app-release-signed.apk ]; then
-            mv app-release-signed.apk ../movimuda-apk.apk
-          elif [ -f ./app-release.apk ]; then
-            mv app-release.apk ../movimuda-apk.apk
-          fi
+          echo "Firmando APK..."
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore ../my-release-key.jks \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
+            app-release.apk ${{ secrets.KEY_ALIAS }}
+
+          # Alinear el APK firmado (opcional pero recomendado)
+          zipalign -v 4 app-release.apk app-release-signed.apk
+
+          mv app-release-signed.apk ../movimuda-apk.apk
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: movimuda-apk
+          name: movimuda-apk-signed
           path: movimuda-apk.apk
