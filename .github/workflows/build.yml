@@ -31,7 +31,7 @@ jobs:
       - name: Build APK
         run: bubblewrap build || echo "Build done."
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MoviMuda_PRO_Beta_APK
           path: android-project/app/build/outputs/apk/debug/app-debug.apk
