@@ -1,4 +1,4 @@
-name: build
+name: Build and Deploy
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
@@ -19,15 +18,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'maven'
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Instalar dependencias
         run: |
           npm install -g @bubblewrap/cli
+          npm ci
 
       - name: Inicializar proyecto TWA
         run: |
