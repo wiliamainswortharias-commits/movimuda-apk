@@ -11,48 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar el repo
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      # 2️⃣ Configurar Node.js
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      # 3️⃣ Instalar dependencias base (Java + Bubblewrap)
       - name: Instalar dependencias base
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y openjdk-17-jdk zipalign
-          echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk
           npm install -g @bubblewrap/cli
 
-      # 4️⃣ Construir TWA sin interacción
       - name: Construir TWA desde manifest
         run: |
           mkdir -p twa
           cd twa
-          echo "Inicializando proyecto TWA..."
-          
-          yes n | bubblewrap init \
-            --manifest=https://movimuda.web.app/manifest.json \
-            --skipPwaValidation \
-            --useExistingProject \
-            --directory=. \
-            --appVersionName=1.0.$GITHUB_RUN_NUMBER \
-            --appVersionCode=$GITHUB_RUN_NUMBER \
-            --jdkPath=$JAVA_HOME
-
-          echo "Compilando APK..."
+          bubblewrap init --manifest=https://TU_DOMINIO/manifest.json --jdk "system" --directory .
           bubblewrap build
-        env:
-          BROWSER: none
 
-      # 5️⃣ Subir APK como artefacto
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: movimuda-apk
+          name: app-release
           path: twa/app-release.apk
