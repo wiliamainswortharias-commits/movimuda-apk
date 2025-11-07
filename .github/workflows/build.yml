@@ -21,35 +21,41 @@ jobs:
         with:
           node-version: '18'
 
-      # 3️⃣ Instalar Bubblewrap CLI globalmente
-      - name: Instalar Bubblewrap
-        run: npm install -g @bubblewrap/cli
+      # 3️⃣ Instalar dependencias necesarias (Java + SDK + Bubblewrap)
+      - name: Instalar dependencias base
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk zipalign
+          npm install -g @bubblewrap/cli
 
-      # 4️⃣ Crear carpeta TWA y generar el proyecto desde el manifest
+      # 4️⃣ Construir el TWA desde el manifest (sin interacción)
       - name: Construir TWA desde manifest
         run: |
           mkdir -p twa
           cd twa
-          echo "Inicializando proyecto desde manifest..."
+
+          echo "Inicializando proyecto TWA sin interacción..."
           bubblewrap init \
             --manifest=https://movimuda.web.app/manifest.json \
             --skipPwaValidation \
             --directory=. \
             --appVersionName=1.0.$GITHUB_RUN_NUMBER \
-            --appVersionCode=$GITHUB_RUN_NUMBER
+            --appVersionCode=$GITHUB_RUN_NUMBER \
+            --jdkPath=/usr/lib/jvm/java-17-openjdk-amd64
+
           echo "Compilando APK..."
           bubblewrap build
         env:
           BROWSER: none
 
-      # 5️⃣ Restaurar el keystore desde secreto
+      # 5️⃣ Restaurar keystore
       - name: Restaurar keystore
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > my-release-key.jks
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
-      # 6️⃣ Firmar y alinear el APK
+      # 6️⃣ Firmar el APK
       - name: Firmar el APK
         run: |
           cd twa
@@ -63,7 +69,7 @@ jobs:
           zipalign -v 4 app-release.apk app-release-signed.apk
           mv app-release-signed.apk ../movimuda-apk.apk
 
-      # 7️⃣ Subir el artefacto (para descargar manualmente si lo deseas)
+      # 7️⃣ Subir el artefacto
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
