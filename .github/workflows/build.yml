@@ -27,9 +27,9 @@ jobs:
       - name: 📦 Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: 🏗️ Generate Android project
+      - name: 🏗️ Generate Android project (auto-confirm)
         run: |
-          bubblewrap init --manifest=https://movimuda.web.app/manifest.json --no-prompt
+          yes "" | bubblewrap init --manifest=https://movimuda.web.app/manifest.json
           bubblewrap build
 
       - name: 📤 Upload generated APK
