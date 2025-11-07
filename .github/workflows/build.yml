@@ -21,7 +21,8 @@ jobs:
         run: npm install -g @bubblewrap/cli
       - name: Generate Android project
         run: |
-          bubblewrap init --manifest=https://movimuda-beta.web.app/manifest.json \
+          bubblewrap init --manifest=https://movimuda-beta.web.app/manifest.json \--no-prompt
+          
           --display=standalone \
           --name="MoviMuda PRO Beta" \
           --short-name="MoviMuda" \
