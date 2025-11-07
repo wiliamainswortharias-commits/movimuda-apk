@@ -1,4 +1,4 @@
-name: Build, Sign and Publish TWA
+name: Build and Sign TWA
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar el repositorio
+      # 1️⃣ Clonar el repo
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
@@ -21,67 +21,38 @@ jobs:
         with:
           node-version: '18'
 
-      # 3️⃣ Instalar dependencias necesarias (Java + SDK + Bubblewrap)
+      # 3️⃣ Instalar dependencias base (Java + Bubblewrap)
       - name: Instalar dependencias base
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y openjdk-17-jdk zipalign
+          echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
           npm install -g @bubblewrap/cli
 
-      # 4️⃣ Construir el TWA desde el manifest (sin interacción)
+      # 4️⃣ Construir TWA sin interacción
       - name: Construir TWA desde manifest
         run: |
           mkdir -p twa
           cd twa
-
-          echo "Inicializando proyecto TWA sin interacción..."
-          bubblewrap init \
+          echo "Inicializando proyecto TWA..."
+          
+          yes n | bubblewrap init \
             --manifest=https://movimuda.web.app/manifest.json \
             --skipPwaValidation \
+            --useExistingProject \
             --directory=. \
             --appVersionName=1.0.$GITHUB_RUN_NUMBER \
             --appVersionCode=$GITHUB_RUN_NUMBER \
-            --jdkPath=/usr/lib/jvm/java-17-openjdk-amd64
+            --jdkPath=$JAVA_HOME
 
           echo "Compilando APK..."
           bubblewrap build
         env:
           BROWSER: none
 
-      # 5️⃣ Restaurar keystore
-      - name: Restaurar keystore
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > my-release-key.jks
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-
-      # 6️⃣ Firmar el APK
-      - name: Firmar el APK
-        run: |
-          cd twa
-          echo "Firmando APK..."
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore ../my-release-key.jks \
-            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-            -keypass ${{ secrets.KEY_PASSWORD }} \
-            app-release.apk ${{ secrets.KEY_ALIAS }}
-          echo "Alineando APK..."
-          zipalign -v 4 app-release.apk app-release-signed.apk
-          mv app-release-signed.apk ../movimuda-apk.apk
-
-      # 7️⃣ Subir el artefacto
+      # 5️⃣ Subir APK como artefacto
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: movimuda-apk-signed
-          path: movimuda-apk.apk
-
-      # 8️⃣ Publicar en Google Play (track interno)
-      - name: Publicar en Google Play
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
-          packageName: ${{ secrets.PACKAGE_NAME }}
-          releaseFiles: movimuda-apk.apk
-          track: internal
-          status: completed
+          name: movimuda-apk
+          path: twa/app-release.apk
