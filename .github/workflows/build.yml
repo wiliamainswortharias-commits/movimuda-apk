@@ -4,35 +4,53 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v3
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Instalar dependencias necesarias
+      - name: Instalar dependencias
         run: |
           npm install -g @bubblewrap/cli
 
-      - name: Inicializar proyecto TWA automáticamente
+      - name: Inicializar proyecto TWA
         run: |
-          echo "Creando proyecto TWA sin interacción..."
-          yes "" | bubblewrap init --manifest=https://tusitio.com/manifest.json
+          echo "Inicializando proyecto Bubblewrap..."
+          mkdir -p twa
+          cd twa
+          bubblewrap init --manifest=https://movimuda.web.app/manifest.json --skipPwaValidation --directory=. --appVersionName=1.0.0 --appVersionCode=1
+          bubblewrap build
+        env:
+          BROWSER: none
 
       - name: Construir APK (release)
         run: |
-          bubblewrap build
+          cd twa
+          ls -al
+          if [ -f ./app-release-signed.apk ]; then
+            mv app-release-signed.apk ../movimuda-apk.apk
+          elif [ -f ./app-release.apk ]; then
+            mv app-release.apk ../movimuda-apk.apk
+          fi
 
       - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: ./app-release-signed.apk
+          name: movimuda-apk
+          path: movimuda-apk.apk
