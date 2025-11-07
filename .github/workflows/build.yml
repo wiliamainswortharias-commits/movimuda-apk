@@ -13,18 +13,10 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
-
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Instalar dependencias
         run: |
@@ -33,7 +25,6 @@ jobs:
 
       - name: Inicializar proyecto TWA
         run: |
-          echo "Inicializando proyecto Bubblewrap..."
           mkdir -p twa
           cd twa
           bubblewrap init --manifest=https://movimuda.web.app/manifest.json --skipPwaValidation --directory=. --appVersionName=1.0.0 --appVersionCode=1
@@ -44,7 +35,6 @@ jobs:
       - name: Construir APK (release)
         run: |
           cd twa
-          ls -al
           if [ -f ./app-release-signed.apk ]; then
             mv app-release-signed.apk ../movimuda-apk.apk
           elif [ -f ./app-release.apk ]; then
