@@ -24,7 +24,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
         # Instala Node.js (agrega la versión solicitada al PATH):contentReference[oaicite:1]{index=1}
 
       - name: Instalar Bubblewrap CLI
