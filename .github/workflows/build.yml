@@ -1,7 +1,6 @@
 name: Build MoviMuda PRO Beta (APK)
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -11,35 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          node-version: 20
 
-      - uses: actions/setup-node@v3
+      - name: ☕ Set up Java (JDK 17)
+        uses: actions/setup-java@v4
         with:
-          node-version: '18'
+          distribution: temurin
+          java-version: 17
 
-      - name: Install Bubblewrap CLI
+      - name: 📦 Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: Generate Android project
+      - name: 🏗️ Generate Android project
         run: |
-          yes "n" | bubblewrap init --manifest=https://movimuda.beta.web.app/manifest.json --no-prompt \
-            --display=standalone \
-            --name="MoviMuda PRO Beta" \
-            --short-name="MoviMuda" \
-            --packageId="com.movimuda.beta" \
-            --skipSdk
-          bubblewrap update --skipSdk
+          bubblewrap init --manifest=https://movimuda.web.app/manifest.json --no-prompt
+          bubblewrap build
 
-      - name: Build APK
-        run: bubblewrap build || echo "Build completed"
-
-      - name: Upload APK
+      - name: 📤 Upload generated APK
         uses: actions/upload-artifact@v4
         with:
-          name: MoviMuda_PRO_Beta_APK
-          path: android-project/app/build/outputs/apk/release/app-release.apk
+          name: MoviMudaPRO-Beta
+          path: ./output/app-release-signed.apk
