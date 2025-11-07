@@ -9,38 +9,51 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Clonar el repositorio
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
+      # 2️⃣ Configurar Node.js
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      # 3️⃣ Instalar dependencias (corregido: sin npm ci)
       - name: Instalar dependencias
         run: |
           npm install -g @bubblewrap/cli
-          npm ci
+          npm install
 
+      # 4️⃣ Inicializar y construir el proyecto TWA
       - name: Inicializar proyecto TWA
         run: |
           mkdir -p twa
           cd twa
-          bubblewrap init --manifest=https://movimuda.web.app/manifest.json --skipPwaValidation --directory=. --appVersionName=1.0.0 --appVersionCode=1
+          bubblewrap init \
+            --manifest=https://movimuda.web.app/manifest.json \
+            --skipPwaValidation \
+            --directory=. \
+            --appVersionName=1.0.0 \
+            --appVersionCode=1
           bubblewrap build
         env:
           BROWSER: none
 
+      # 5️⃣ Restaurar el keystore desde los secretos de GitHub
       - name: Restaurar keystore desde secreto
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > my-release-key.jks
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
+      # 6️⃣ Firmar y alinear el APK generado
       - name: Firmar el APK
         run: |
           cd twa
+
           echo "Firmando APK..."
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
             -keystore ../my-release-key.jks \
@@ -48,11 +61,12 @@ jobs:
             -keypass ${{ secrets.KEY_PASSWORD }} \
             app-release.apk ${{ secrets.KEY_ALIAS }}
 
-          # Alinear el APK firmado (opcional pero recomendado)
+          echo "Alineando APK..."
           zipalign -v 4 app-release.apk app-release-signed.apk
 
           mv app-release-signed.apk ../movimuda-apk.apk
 
+      # 7️⃣ Subir el artefacto resultante (APK firmado)
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
